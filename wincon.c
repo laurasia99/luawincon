@@ -12,7 +12,6 @@
  *  - Pseudo consoles not supported
  */
 
-
 #include "lua.h"
 #include "lauxlib.h"
 
@@ -26,47 +25,6 @@
 
 #define STRINGIFY(X) #X
 #define TOSTRING(X) STRINGIFY(X)
-
-/* Diagnostic */
-
-static void tabledump(lua_State *L,int i);
-static void elementdump(lua_State *L,int i) {
-  int t=lua_type(L,i);
-  switch(t){
-  case LUA_TSTRING:printf("'%s'",lua_tostring(L,i));break;
-  case LUA_TBOOLEAN:printf(lua_toboolean(L,i)?"true":"false");break;
-  case LUA_TNUMBER:printf("%g",lua_tonumber(L,i));break;
-  case LUA_TTABLE:tabledump(L,i);break;
-  default:printf("%s",lua_typename(L,t));break;
-  }
-}
-static void tabledump(lua_State *L,int i) {
-  if(i<0)i=lua_gettop(L)+1+i;
-  lua_pushnil(L);
-  printf("{");
-  while(lua_next(L,i)!=0){
-    elementdump(L,-2); printf(":"); elementdump(L,-1); printf(",");
-    lua_pop(L,1);
-  }
-  printf("}");
-}
-
-static void stackdump(lua_State *L) {
-  int i;
-  int top=lua_gettop(L);
-  for(i=1;i<=top;++i){
-    int t=lua_type(L,i);
-    switch(t){
-    case LUA_TSTRING:printf("'%s'",lua_tostring(L,i));break;
-    case LUA_TBOOLEAN:printf(lua_toboolean(L,i)?"true":"false");break;
-    case LUA_TNUMBER:printf("%g",lua_tonumber(L,i));break;
-    case LUA_TTABLE:tabledump(L,i);break;
-    default:printf("%s",lua_typename(L,t));break;
-    }
-    printf(" ");
-  }
-  printf("\n");
-}
 
 /* Error return */
 static int lGetLastError(lua_State *L) {
@@ -560,6 +518,10 @@ static const luaL_Reg winconlib[] = {
   {NULL, NULL}
 };
 
+static __inline addflag(lua_State *L,lua_Integer n,const char *k) {
+  lua_pushinteger(L,n);lua_setfield(L,-2,k);
+}
+
 /*
 ** Open wincon library
 */
@@ -570,8 +532,8 @@ LUAMOD_API int luaopen_wincon(lua_State *L) {
 
   luaL_newlib(L, winconlib);
 
-#define FLAG(m)    lua_pushinteger(L,m);lua_setfield(L,-2,#m)
-#define FLAG2(m,n) lua_pushinteger(L,n);lua_setfield(L,-2,#m)
+#define FLAG(m)    addflag(L,m,#m)
+#define FLAG2(m,n) addflag(L,n,#m)
 
 /* Console mode - Input flags */
   FLAG(ENABLE_ECHO_INPUT);
@@ -640,4 +602,29 @@ LUAMOD_API int luaopen_wincon(lua_State *L) {
   return 1;
 }
 
+/**
+
+MIT License
+
+Copyright (c) 2022 Laurasia Consulting Pty Ltd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+**/
 
